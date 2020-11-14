@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
-
+import datetime
 
 url = "https://www.kivano.kg/mobilnye-telefony"
 
@@ -18,9 +18,17 @@ def write_csv(data):
             writer.writerow([item['title'], item['price'], item['img-url']])
 
 
+def padding_total(html):
+    soup = BeautifulSoup(html, "html.parser")
+    padding = soup.find('div', class_="pager-wrap").find_all('a')[-1].get('href')
+    total_pages = padding.split('=')[1]
+    return int(total_pages)
+    
+
 def get_content(html):
     soup = BeautifulSoup(html, "html.parser")
     items = soup.find_all('div', class_="product_listbox")
+    
     
     telephon = []
     link = "https://www.kivano.kg"
@@ -44,16 +52,27 @@ def get_content(html):
                     price[0],
             'title':
                     item[1]})
-    
+        write_csv(telephon)
     return(telephon)
     
 
-
-
 def main():
+    start = datetime.datetime.now()
     html = get_html(url)
     data = get_content(html)
-    write_csv(data)
+    total_padding = padding_total(html)
+    
+    main_url = "https://www.kivano.kg/mobilnye-telefony?page=1"
+    base_url = "https://www.kivano.kg/mobilnye-telefony?"
+    page_url = "page="
+    
+    for i in range(1, total_padding + 1):
+        url_gen = base_url + page_url + str(i)
+        html_page = get_html(url_gen)
+        get_content(html_page)
+    end = datetime.datetime.now()
+    res = end - start
+    print(res) 
 
 if __name__ == '__main__':
     main()
